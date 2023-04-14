@@ -1,0 +1,80 @@
+#include <SoftwareSerial.h>
+
+SoftwareSerial BTserial(10, 11); // Bluetooth module connected to digital pins 10 and 11
+const int RELAY_PIN = 3; // Relay connected to pin 3
+
+void setup() {
+  pinMode(RELAY_PIN, OUTPUT);
+  digitalWrite(RELAY_PIN, HIGH); // Turn off the relay at startup
+  BTserial.begin(9600);
+}
+
+void loop() {
+  if (BTserial.available() == 4) { // Check if at least four characters are available
+    char firstChar = BTserial.read(); // Read the first character
+    char secondChar = BTserial.read(); // Read the second character
+    char thirdChar = BTserial.read(); // Read the third character
+    char fourthChar = BTserial.read(); // Read the fourth character
+
+    switch (firstChar >= '0' && firstChar <= '9' && secondChar >= '0' && secondChar <= '9') {
+      case true: {
+        int wait = (firstChar - '0') * 10 + (secondChar - '0'); // Convert the first two characters to an integer
+
+        switch (thirdChar) {
+          case 's': // Check if the delay time is in seconds
+            delay(wait * 1000); // Delay for the specified number of seconds
+            break;
+
+          case 'm': // Check if the delay time is in minutes
+            delay(wait * 60000); // Delay for the specified number of minutes
+            break;
+
+          default:
+            return;
+        }
+
+        switch (fourthChar) {
+          case 'A':
+            digitalWrite(RELAY_PIN, LOW); // Turn on the relay
+            break;
+
+          default:
+            return;
+        }
+      }
+      break;
+
+      case false: {
+        switch (firstChar) {
+          case 'A':
+            if (secondChar >= '0' && secondChar <= '9' && thirdChar >= '0' && thirdChar <= '9') {
+              int duration = (secondChar - '0') * 10 + (thirdChar - '0');
+
+              switch (fourthChar) {
+                case 's': // Check if the last character is 's'
+                  digitalWrite(RELAY_PIN, LOW);
+                  delay(duration * 1000); // Turn on the relay for the specified number of seconds
+                  digitalWrite(RELAY_PIN, HIGH);
+                  break;
+                case 'm': // Check if the last character is 'm'
+                  digitalWrite(RELAY_PIN, LOW);
+                  delay(duration * 60000); // Turn on the relay for the specified number of minutes
+                  digitalWrite(RELAY_PIN, HIGH);
+                  break;
+
+                default:
+                  return;
+              }
+            } else {
+              return;
+            }
+            break;
+
+          default:
+            return;
+        }
+      }
+      break;
+    }
+  }
+}
